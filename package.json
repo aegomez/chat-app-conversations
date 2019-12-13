@@ -1,0 +1,43 @@
+{
+  "name": "chat-app-conversations",
+  "version": "0.1.0",
+  "description": "The conversations service for the chat application.",
+  "repository": "https://github.com/aegomez/chat-app-conversations.git",
+  "author": "Adrian Gomez",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "build-watch": "tsc -w",
+    "dev": "env-cmd node build/server.js",
+    "start": "node build/server.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "cookie": "^0.4.0",
+    "express": "^4.17.1",
+    "express-graphql": "^0.9.0",
+    "graphql": "^14.5.8",
+    "graphql-request": "^1.8.2",
+    "mongoose": "^5.8.1",
+    "morgan": "^1.9.1",
+    "ts-mongoose": "^0.0.21"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.0.1",
+    "@types/cookie": "^0.3.3",
+    "@types/express": "^4.17.2",
+    "@types/mongoose": "^5.5.34",
+    "@types/morgan": "^1.7.37",
+    "@types/node": "^12.12.17",
+    "@typescript-eslint/eslint-plugin": "^2.11.0",
+    "@typescript-eslint/parser": "^2.11.0",
+    "env-cmd": "^10.0.1",
+    "eslint": "^6.7.2",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "prettier": "^1.19.1",
+    "tslib": "^1.10.0",
+    "typescript": "^3.7.3"
+  }
+}
