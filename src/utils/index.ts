@@ -1,2 +1,2 @@
-export * from './getUserGroups';
+export * from './userAPi';
 export * from './validateCookies';

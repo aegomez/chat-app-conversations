@@ -28,7 +28,7 @@ export interface AsyncSocketMiddleware {
 }
 
 /**
- * The response type of the getUserGroups query
+ * The response type of the getUserLists query.
  */
 export interface UserListsResponse {
   getUserLists: {
