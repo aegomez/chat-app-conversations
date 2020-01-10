@@ -16,6 +16,7 @@ The following variables must be defined before running the application:
 - `MONGODB_USER`: the MongoDB username
 - `MONGODB_PASS`: the MongoDB password (these two were separated from the URI to avoid some parsing issues that can happen when using special characters in the password).
 - `AUTH_API_URI`: the location of the auth service.
+- `USER_API_URI`: the location of the users service.
 - `PORT`: this is automatically assigned by some services (Heroku, etc.), so be careful before setting it (default 4000).
 
 ### Development mode

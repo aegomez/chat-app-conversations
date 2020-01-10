@@ -1,20 +1,41 @@
-import { RequestHandler } from 'express';
+import { Socket } from 'socket.io';
+import { IncomingMessage } from 'http';
 
-// Declaration Merging
-// Augment the original Request interface
-declare module 'express-serve-static-core' {
-  interface Request {
-    _userId: string;
-    _userName: string;
-  }
+/**
+ * The http request sent with the connection,
+ * plus some custom fields.
+ */
+export interface SocketRequest extends IncomingMessage {
+  _userId: string;
+  _userName: string;
+  _token: string;
 }
 
 /**
- * A RequestHandler function that returns a
- * Promise, which resolves to type `RT`.
+ * SocketIO middleware function.
  */
-export interface AsyncMiddleware<RT> {
-  (...args: Parameters<RequestHandler>): Promise<RT>;
+export interface SocketMiddleware {
+  (socket: Socket, fn: (err?: Error) => void): void;
+}
+
+/**
+ * Accepts the same parameteres as a
+ * SocketIO middleware function, but returns
+ * a Promise instead.
+ */
+export interface AsyncSocketMiddleware {
+  (...args: Parameters<SocketMiddleware>): Promise<void>;
+}
+
+/**
+ * The response type of the getUserGroups query
+ */
+export interface UserListsResponse {
+  getUserLists: {
+    success: boolean;
+    groups: string[];
+    contacts: string[];
+  };
 }
 
 /**

@@ -1,8 +1,12 @@
-/* eslint-disable require-atomic-updates */
 import { parse } from 'cookie';
 import { request } from 'graphql-request';
 
-import { AsyncMiddleware, VerifyTokenResponse } from './types';
+import {
+  AsyncSocketMiddleware,
+  SocketMiddleware,
+  SocketRequest,
+  VerifyTokenResponse
+} from './types';
 
 const verifyTokenQuery = /* GraphQL */ `
   query verifyToken($token: String) {
@@ -14,13 +18,12 @@ const verifyTokenQuery = /* GraphQL */ `
   }
 `;
 
-export const validateCookies: AsyncMiddleware<void> = async (
-  req,
-  res,
-  next
-) => {
+const validateCookiesAsync: AsyncSocketMiddleware = async (socket, next) => {
   try {
+    // Get cookies from the socket object
+    const req = socket.request as SocketRequest;
     const cookies = parse(req.headers.cookie || '');
+
     // If the cookie does not even exist:
     if (!cookies.token) {
       throw Error('Could not parse cookies');
@@ -51,15 +54,16 @@ export const validateCookies: AsyncMiddleware<void> = async (
       // ... and token is valid
       // Copy the returned values to the req object
       req._userId = auth._userId;
-      req._userName = auth._userName;
+      req._token = token;
       next();
     }
   } catch (error) {
-    console.error('Error validateCookies: ', error.message);
-    // Return a successful response but
-    // inform that the cookie is invalid.
-    res.status(200).send({
-      data: { error: 'NOT_AUTHORIZED ' }
-    });
+    next(new Error(`validateCookies: ${error.message}`));
   }
 };
+
+export function getValidateCookies(): SocketMiddleware {
+  return function(socket, next) {
+    Promise.resolve(validateCookiesAsync(socket, next)).catch(next);
+  };
+}
