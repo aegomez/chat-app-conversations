@@ -1,10 +1,10 @@
 import { getConversation } from './conversations';
-import { Message, InitMessageProps } from '../models';
+import { Message, InitMessageProps, MessageProps } from '../models';
 
 export async function createMessage(
   conversationId: string,
   messageProps: InitMessageProps
-): Promise<string | null> {
+): Promise<MessageProps | null> {
   try {
     // Get the conversation
     const conversation = await getConversation(conversationId, 'messages');
@@ -20,7 +20,7 @@ export async function createMessage(
     conversation.lastUpdate = date;
     await conversation.save();
 
-    return id as string;
+    return newMessage;
   } catch (error) {
     console.error('createMessage: ', error.message);
     return null;
