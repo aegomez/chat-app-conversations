@@ -3,7 +3,7 @@ import { createSchema, Type, typedModel, ExtractProps } from 'ts-mongoose';
 const isRequired = { required: true as const };
 
 // The message sent/delivered status.
-export const deliveryEnum = ['pending', 'sent', 'delivered', 'seen'] as const;
+export const deliveryEnum = ['sent', 'delivered', 'seen'] as const;
 export type DeliveryStatus = typeof deliveryEnum[number];
 
 export const MessageSchema = createSchema({
