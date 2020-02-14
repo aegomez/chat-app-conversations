@@ -2,140 +2,117 @@ import { Socket } from 'socket.io';
 
 import { ClientEvents, ServerEvents } from './events';
 import { subscribeUserToRooms } from './subscribe';
-import { SocketRequest, WithId, MessageArgs, UpdateMessageArgs } from './types';
 import {
-  createConversation,
+  SocketRequest,
+  ConversationArgs,
+  NewMessageArgs,
+  UpdateMessageArgs
+} from './types';
+import {
+  // createConversation,
   createMessage,
-  deleteMessage,
+  updateMessageStatus,
   getPopulatedConversation,
-  updateMessageDelivery
+  updateConversationStatus
 } from '../db/controllers';
 
 const {
   DISCONNECT,
-  CREATE_CONVERSATION,
   GET_CONVERSATION,
   CREATE_MESSAGE,
-  ACK_DELIVERED_MESSAGE,
-  ACK_SEEN_MESSAGE,
-  DELETE_MESSAGE
+  UPDATE_MESSAGE,
+  UPDATE_CONVERSATION
 } = ClientEvents;
 
 const {
-  SIGN_IN,
-  SIGN_OUT,
-  NEW_CREATED_MESSAGE,
-  NEW_DELETED_MESSAGE,
-  NEW_DELIVERED_MESSAGE,
-  NEW_SEEN_MESSAGE,
-  CONVERSATION_CREATED,
   CONVERSATION_FETCHED,
+  CONVERSATION_UPDATED,
   MESSAGE_CREATED,
-  MESSAGE_DELETED
+  MESSAGE_UPDATED,
+  USER_CONNECTED
 } = ServerEvents;
 
 export function socketManager(socket: Socket): void {
   console.log('New client connected');
 
   // Get these values after the cookie was validated.
-  const { _userId, _userName, _token } = socket.request as SocketRequest;
+  const {
+    _userId: userId,
+    _userName: userName,
+    _token
+  } = socket.request as SocketRequest;
 
   // Subscribe to rooms: own, contacts and groups.
-  subscribeUserToRooms(socket, _userId, _token);
+  subscribeUserToRooms(socket, userId, _token);
 
   // Emit sign-in notification to own channel.
   // All connected contacts should receive
   // this notification.
-  socket.broadcast.to(_userId).emit(SIGN_IN, { id: _userId, name: _userName });
+  socket.broadcast
+    .to(userId)
+    .emit(USER_CONNECTED, { userId, userName, connected: true });
 
   // Emit sign-out notification to own channel.
   socket.on(DISCONNECT, () => {
+    console.log(userId, ' disconnected');
     socket.broadcast
-      .to(_userId)
-      .emit(SIGN_OUT, { id: _userId, name: _userName });
+      .to(userId)
+      .emit(USER_CONNECTED, { userId, userName, connected: false });
   });
 
   /// ----- ClientEvent Listeners ----- ///
 
-  socket.on(CREATE_CONVERSATION, async () => {
-    console.log(CREATE_CONVERSATION, 'triggered.');
-    const id = await createConversation();
-    socket.emit(CONVERSATION_CREATED, { id });
-  });
-
-  socket.on(GET_CONVERSATION, async ({ id }: WithId) => {
+  socket.on(GET_CONVERSATION, async (id: string) => {
     console.log(GET_CONVERSATION, 'triggered.');
     const conversation = await getPopulatedConversation(id);
-    socket.emit(CONVERSATION_FETCHED, { conversation });
+    if (!conversation) return;
+    socket.emit(CONVERSATION_FETCHED, conversation);
   });
 
   socket.on(
     CREATE_MESSAGE,
-    async ({ conversationId, targetId, content }: MessageArgs) => {
+    async ({ conversationId, content }: NewMessageArgs) => {
       console.log(CREATE_MESSAGE, 'triggered.');
-      const author = _userId;
+      const author = userId;
       const message = await createMessage(conversationId, author, content);
       if (!message) return;
 
-      // const message = {
-      //   id: newMessage._id.toHexString(),
-      //   date: newMessage.date,
-      //   author,
-      //   content
-      // };
-
-      // Return success response to sender
-      socket.emit(MESSAGE_CREATED, { id: message._id });
+      // Return new message to sender
+      socket.emit(MESSAGE_CREATED, { conversationId, message, itsOwn: true });
       // Notify the other party
       socket.broadcast
-        .to(targetId)
-        .emit(NEW_CREATED_MESSAGE, { targetId, message });
+        .to(userId)
+        .emit(MESSAGE_CREATED, { conversationId, message, itsOwn: false });
     }
   );
 
   socket.on(
-    DELETE_MESSAGE,
-    async ({ messageId, targetId }: UpdateMessageArgs) => {
-      console.log(DELETE_MESSAGE, 'triggered.');
-      const success = await deleteMessage(messageId);
-      // Return response to sender
-      socket.emit(MESSAGE_DELETED, { success });
-      // If a message was deleted, notify
-      // the other subscriptors
-      if (success) {
-        socket.broadcast
-          .to(targetId)
-          .emit(NEW_DELETED_MESSAGE, { messageId, targetId });
-      }
+    UPDATE_MESSAGE,
+    async ({ conversationId, messageId, newStatus }: UpdateMessageArgs) => {
+      console.log(UPDATE_MESSAGE, 'triggered.');
+      const success = await updateMessageStatus(messageId, newStatus);
+      if (!success) return;
+
+      // If a message was deleted,
+      // notify the sender and the other
+      // subscriptors (same event)
+      const response = { conversationId, messageId, newStatus };
+      socket.emit(MESSAGE_UPDATED, response);
+      socket.broadcast.to(userId).emit(MESSAGE_UPDATED, response);
     }
   );
 
   socket.on(
-    ACK_DELIVERED_MESSAGE,
-    async ({ messageId, targetId }: UpdateMessageArgs) => {
-      console.log(ACK_DELIVERED_MESSAGE, 'triggered.');
+    UPDATE_CONVERSATION,
+    async ({ conversationId, newStatus }: ConversationArgs) => {
+      console.log(UPDATE_CONVERSATION, 'triggered.');
       // Update the database
-      const success = await updateMessageDelivery(messageId, 'delivered');
-      // Notify the other party
+      const success = await updateConversationStatus(conversationId, newStatus);
       if (success) {
+        // Notify the other party
         socket.broadcast
-          .to(targetId)
-          .emit(NEW_DELIVERED_MESSAGE, { messageId, targetId });
-      }
-    }
-  );
-
-  socket.on(
-    ACK_SEEN_MESSAGE,
-    async ({ messageId, targetId }: UpdateMessageArgs) => {
-      console.log(ACK_SEEN_MESSAGE, 'triggered.');
-      // Update the database
-      const success = await updateMessageDelivery(messageId, 'seen');
-      // Notify the other party
-      if (success) {
-        socket.broadcast
-          .to(targetId)
-          .emit(NEW_SEEN_MESSAGE, { messageId, targetId });
+          .to(userId)
+          .emit(CONVERSATION_UPDATED, { conversationId, newStatus });
       }
     }
   );

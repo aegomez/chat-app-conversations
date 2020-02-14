@@ -1,16 +1,17 @@
+import { MessageStatus } from '../db/models';
+
 export { SocketRequest } from '../utils/types';
 
-export interface WithId {
-  id: string;
+export interface ConversationArgs {
+  conversationId: string;
+  newStatus: MessageStatus;
 }
 
-export interface MessageArgs {
+export interface NewMessageArgs {
   conversationId: string;
-  targetId: string;
   content: string;
 }
 
-export interface UpdateMessageArgs {
+export interface UpdateMessageArgs extends ConversationArgs {
   messageId: string;
-  targetId: string;
 }
