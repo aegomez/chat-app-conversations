@@ -3,8 +3,8 @@ import { createSchema, Type, typedModel, ExtractProps } from 'ts-mongoose';
 const isRequired = { required: true as const };
 
 // The message sent/delivered status.
-export const deliveryEnum = ['sent', 'delivered', 'seen'] as const;
-export type DeliveryStatus = typeof deliveryEnum[number];
+export const statusEnum = ['sent', 'received', 'seen', 'deleted'] as const;
+export type MessageStatus = typeof statusEnum[number];
 
 export const MessageSchema = createSchema({
   author: Type.string(isRequired),
@@ -13,14 +13,10 @@ export const MessageSchema = createSchema({
     ...isRequired,
     default: Date.now()
   }),
-  visible: Type.boolean({
+  status: Type.string({
     ...isRequired,
-    default: true
-  }),
-  delivery: Type.string({
-    ...isRequired,
-    enum: deliveryEnum,
-    default: deliveryEnum[0]
+    enum: statusEnum,
+    default: statusEnum[0]
   })
 });
 

@@ -1,5 +1,5 @@
 import { getConversation } from './conversations';
-import { Message, MessageProps, deliveryEnum, DeliveryStatus } from '../models';
+import { Message, MessageProps, MessageStatus, statusEnum } from '../models';
 
 export async function createMessage(
   conversationId: string,
@@ -29,52 +29,42 @@ export async function createMessage(
 }
 
 /**
- * Deletes the message `content`, but the Document
- * is kept for archive purposes. Also changes the
- * `visible` flag to false. Cannot be undone.
+ * Update a single message status.
+ * If new status is `deleted`, clear the
+ * message `content`, but the Document is
+ * kept for archive purposes.
+ * Deleting content cannot be undone.
  */
-export async function deleteMessage(messageId: string): Promise<boolean> {
-  try {
-    // Get the message
-    const message = await Message.findById(messageId).exec();
-    if (message === null) throw Error('message not found');
-
-    // Delete the content and set as not visible.
-    message.content = ' ';
-    message.visible = false;
-    const saved = await message.save();
-
-    return !!saved;
-  } catch (error) {
-    console.error('deleteMessage', error.message);
-    return false;
-  }
-}
-
-export async function updateMessageDelivery(
+export async function updateMessageStatus(
   messageId: string,
-  newStatus: DeliveryStatus
+  newStatus: MessageStatus
 ): Promise<boolean> {
   try {
     // Validate the newStatus
-    if (!newStatus || !deliveryEnum.includes(newStatus)) {
+    if (!newStatus || !statusEnum.includes(newStatus)) {
       throw Error('status string not valid.');
     }
+
     // Get the message
-    const message = await Message.findById(messageId, 'delivery').exec();
-    if (!message) throw Error('message not found.');
+    const message = await Message.findById(messageId).exec();
+    if (!message) throw Error('message not found');
 
     // Return if no changes are detected
-    if (message.delivery === newStatus) {
-      return true;
+    if (message.status === newStatus) {
+      return false;
     }
-    // Change the delivery field to a valid status
-    message.delivery = newStatus;
+
+    // Update the message status
+    message.status = newStatus;
+    if (newStatus === 'deleted') {
+      // Delete the message content and set as not visible.
+      message.content = ' ';
+    }
     const saved = await message.save();
 
     return !!saved;
   } catch (error) {
-    console.error('updateMessageDelivery', error.message);
+    console.error('updateMessageStatus', error.message);
     return false;
   }
 }
