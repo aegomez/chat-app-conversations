@@ -1,7 +1,10 @@
+import 'ts-mongoose/plugin';
+
 import {
   Conversation,
   ConversationDoc,
   ConversationProps,
+  Message,
   MessageStatus,
   statusEnum
 } from '../models';
@@ -69,18 +72,30 @@ export async function updateConversationStatus(
       .exec();
     if (!conversation) throw Error('conversation not found.');
 
+    // Copy all message ids to an array
+    const ids = conversation.messages.map(message => message._id);
+
+    // Get array of documents
+    const messages = await Message.find()
+      .where('_id')
+      .in(ids)
+      .exec();
+
     // Update all messages
-    for (const message of conversation.messages) {
-      message.status = newStatus;
-      if (newStatus === 'deleted') {
-        message.content = '';
+    for (const message of messages) {
+      // Deleted status cannot be undone
+      if (message.status !== 'deleted') {
+        message.status = newStatus;
+        if (newStatus === 'deleted') {
+          message.content = '';
+        }
+        message.save();
       }
     }
-    const saved = await conversation.save();
 
-    return !!saved;
+    return true;
   } catch (error) {
-    console.error('updateConversationDelivery', error.message);
+    console.error('updateConversation', error.message);
     return false;
   }
 }
