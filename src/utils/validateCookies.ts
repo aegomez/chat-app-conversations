@@ -54,6 +54,7 @@ const validateCookiesAsync: AsyncSocketMiddleware = async (socket, next) => {
       // ... and token is valid
       // Copy the returned values to the req object
       req._userId = auth._userId;
+      req._userName = auth._userName;
       req._token = token;
       next();
     }
