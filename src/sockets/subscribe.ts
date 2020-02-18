@@ -26,7 +26,6 @@ export function subscribeUserToRooms(
         // Subscribe to all the contacts' and
         // groups' rooms.
         list.forEach(roomId => {
-          console.log(`Joining ${userId} to room ${roomId}`);
           socket.join(roomId);
         });
       }

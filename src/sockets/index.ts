@@ -33,8 +33,6 @@ const {
 } = ServerEvents;
 
 export function socketManager(socket: Socket): void {
-  console.log('New client connected');
-
   // Get these values after the cookie was validated.
   const {
     _userId: userId,
@@ -54,7 +52,6 @@ export function socketManager(socket: Socket): void {
 
   // Emit sign-out notification to own channel.
   socket.on(DISCONNECT, () => {
-    console.log(userId, ' disconnected');
     socket.broadcast
       .to(userId)
       .emit(USER_CONNECTED, { userId, userName, connected: false });
@@ -63,7 +60,6 @@ export function socketManager(socket: Socket): void {
   /// ----- ClientEvent Listeners ----- ///
 
   socket.on(GET_CONVERSATION, async (id: string) => {
-    console.log(GET_CONVERSATION, 'triggered.');
     const conversation = await getPopulatedConversation(id);
     if (!conversation) return;
     socket.emit(CONVERSATION_FETCHED, conversation);
@@ -72,7 +68,6 @@ export function socketManager(socket: Socket): void {
   socket.on(
     CREATE_MESSAGE,
     async ({ conversationId, content }: NewMessageArgs) => {
-      console.log(CREATE_MESSAGE, 'triggered.');
       const author = userId;
       const message = await createMessage(conversationId, author, content);
       if (!message) return;
@@ -89,7 +84,6 @@ export function socketManager(socket: Socket): void {
   socket.on(
     UPDATE_MESSAGE,
     async ({ conversationId, messageId, newStatus }: UpdateMessageArgs) => {
-      console.log(UPDATE_MESSAGE, 'triggered.');
       const success = await updateMessageStatus(messageId, newStatus);
       if (!success) return;
 
@@ -105,7 +99,6 @@ export function socketManager(socket: Socket): void {
   socket.on(
     UPDATE_CONVERSATION,
     async ({ conversationId, newStatus }: ConversationArgs) => {
-      console.log(UPDATE_CONVERSATION, 'triggered.');
       // Update the database
       const success = await updateConversationStatus(conversationId, newStatus);
       if (success) {
