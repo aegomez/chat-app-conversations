@@ -39,6 +39,15 @@ export interface UserListsResponse {
 }
 
 /**
+ * The response type of the updateUserConnected query.
+ */
+export interface UserConnectedResponse {
+  updateUserConnected: {
+    success: boolean;
+  };
+}
+
+/**
  * The response type of the verifyToken query.
  */
 export interface VerifyTokenResponse {

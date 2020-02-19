@@ -15,6 +15,7 @@ import {
   getPopulatedConversation,
   updateConversationStatus
 } from '../db/controllers';
+import { updateUserConnected } from '../utils';
 
 const {
   DISCONNECT,
@@ -55,6 +56,10 @@ export function socketManager(socket: Socket): void {
     socket.broadcast
       .to(userId)
       .emit(USER_CONNECTED, { userId, userName, connected: false });
+    // Also send a disconnect query to the
+    // users' server, in case the client
+    // didn't logout correctly.
+    updateUserConnected(_token, false).catch(err => console.error(err));
   });
 
   /// ----- ClientEvent Listeners ----- ///
