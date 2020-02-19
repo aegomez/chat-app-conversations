@@ -67,7 +67,7 @@ export function socketManager(socket: Socket): void {
 
   socket.on(
     CREATE_MESSAGE,
-    async ({ conversationId, content }: NewMessageArgs) => {
+    async ({ conversationId, targetId, content }: NewMessageArgs) => {
       const author = userId;
       const message = await createMessage(conversationId, author, content);
       if (!message) return;
@@ -76,14 +76,19 @@ export function socketManager(socket: Socket): void {
       socket.emit(MESSAGE_CREATED, { conversationId, message, itsOwn: true });
       // Notify the other party
       socket.broadcast
-        .to(userId)
+        .to(targetId)
         .emit(MESSAGE_CREATED, { conversationId, message, itsOwn: false });
     }
   );
 
   socket.on(
     UPDATE_MESSAGE,
-    async ({ conversationId, messageId, newStatus }: UpdateMessageArgs) => {
+    async ({
+      conversationId,
+      messageId,
+      targetId,
+      newStatus
+    }: UpdateMessageArgs) => {
       const success = await updateMessageStatus(messageId, newStatus);
       if (!success) return;
 
@@ -92,19 +97,19 @@ export function socketManager(socket: Socket): void {
       // subscriptors (same event)
       const response = { conversationId, messageId, newStatus };
       socket.emit(MESSAGE_UPDATED, response);
-      socket.broadcast.to(userId).emit(MESSAGE_UPDATED, response);
+      socket.broadcast.to(targetId).emit(MESSAGE_UPDATED, response);
     }
   );
 
   socket.on(
     UPDATE_CONVERSATION,
-    async ({ conversationId, newStatus }: ConversationArgs) => {
+    async ({ conversationId, targetId, newStatus }: ConversationArgs) => {
       // Update the database
       const success = await updateConversationStatus(conversationId, newStatus);
       if (success) {
         // Notify the other party
         socket.broadcast
-          .to(userId)
+          .to(targetId)
           .emit(CONVERSATION_UPDATED, { conversationId, newStatus });
       }
     }

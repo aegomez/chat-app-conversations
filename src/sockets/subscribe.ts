@@ -4,7 +4,7 @@ import { getUserLists } from '../utils';
 /**
  * Subscribe the socket to a room with the same
  * `id` as the user's, and to the rooms with
- * the `ids` of their contact and of the
+ * the `ids` of their contacts and of the
  * groups they have joined.
  * @param socket The current socket
  * @param userId User ID.
@@ -16,7 +16,8 @@ export function subscribeUserToRooms(
   token: string
 ): void {
   // First, join to a room with the same id as the user.
-  // Only this user should emit in this room.
+  // This user should emit in this room for connection events.
+  // Contacts should emit to this channel for direct messaging.
   socket.join(userId);
 
   // Get all the groups the user belongs to.
