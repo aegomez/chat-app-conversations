@@ -18,16 +18,9 @@ const io = socketIO(server, { serveClient: false });
 // express middleware
 app.use(express.json());
 app.use(compression());
-app.use(morgan('dev'));
-
-// connect to the database
-connect()
-  .then(() => {
-    console.log('Successfully connected to DB.');
-  })
-  .catch((error: Error) => {
-    console.error('Could not connect to the database: ', error.message);
-  });
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
 app.post('/api', apiRouteHandler);
 
@@ -35,6 +28,13 @@ app.post('/api', apiRouteHandler);
 io.use(getValidateCookies());
 io.on('connection', socketManager);
 
-server.listen(PORT, () => {
-  console.log(`Server up and running on port ${PORT}.`);
-});
+// connect to the database
+connect()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server up and running on port ${PORT}.`);
+    });
+  })
+  .catch(() => {
+    console.error('Connect to DB failed after retries.');
+  });
